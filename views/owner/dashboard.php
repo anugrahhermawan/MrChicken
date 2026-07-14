@@ -31,7 +31,7 @@ require_once 'views/templates/header.php';
 <!-- Metrik Dashboard Row -->
 <div class="row mb-4">
     <!-- Omzet Card -->
-    <div class="col-md-3 mb-3">
+    <div class="col-12 col-sm-6 col-xl-3 mb-3">
         <div class="card premium-card p-3 h-100">
             <div class="card-body d-flex align-items-center">
                 <div class="me-3 p-3 rounded-3 text-primary" style="background-color: #ebf8ff;">
@@ -47,7 +47,7 @@ require_once 'views/templates/header.php';
     </div>
 
     <!-- Volume Card -->
-    <div class="col-md-3 mb-3">
+    <div class="col-12 col-sm-6 col-xl-3 mb-3">
         <div class="card premium-card p-3 h-100">
             <div class="card-body d-flex align-items-center">
                 <div class="me-3 p-3 rounded-3 text-primary" style="background-color: #ebf8ff;">
@@ -63,7 +63,7 @@ require_once 'views/templates/header.php';
     </div>
 
     <!-- Sisa Slot Card -->
-    <div class="col-md-3 mb-3">
+    <div class="col-12 col-sm-6 col-xl-3 mb-3">
         <div class="card premium-card p-3 h-100">
             <div class="card-body d-flex align-items-center">
                 <div class="me-3 p-3 rounded-3 text-primary" style="background-color: #ebf8ff;">
@@ -79,7 +79,7 @@ require_once 'views/templates/header.php';
     </div>
 
     <!-- Total Piutang Card -->
-    <div class="col-md-3 mb-3">
+    <div class="col-12 col-sm-6 col-xl-3 mb-3">
         <div class="card premium-card p-3 h-100">
             <div class="card-body d-flex align-items-center">
                 <div class="me-3 p-3 rounded-3 text-primary" style="background-color: #ebf8ff;">
@@ -175,7 +175,7 @@ require_once 'views/templates/header.php';
             <span class="badge bg-primary"><?= count($transaksi) ?> Nota</span>
         </h5>
 
-        <div class="table-responsive-scroll">
+        <div class="table-responsive table-responsive-scroll">
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>

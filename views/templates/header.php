@@ -44,17 +44,8 @@ $userName = $_SESSION['nama'] ?? '';
             overflow-x: hidden;
         }
 
-        /* Layout */
-        .wrapper {
-            display: flex;
-            width: 100%;
-            align-items: stretch;
-        }
-
-        /* Sidebar Styling (Sticky Sidebar) */
+        /* Sidebar Styling (Sticky Sidebar on Desktop) */
         #sidebar {
-            min-width: 260px;
-            max-width: 260px;
             background-color: var(--sidebar-bg);
             color: #fff;
             position: sticky;
@@ -65,12 +56,15 @@ $userName = $_SESSION['nama'] ?? '';
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
+            z-index: 1020;
         }
 
-        /* Scrollable Table Container */
+        /* Scrollable Table Container with Horizontal Scroll */
         .table-responsive-scroll {
             max-height: 65vh;
             overflow-y: auto;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
             border: 1.5px solid #f1f5f9;
             border-radius: 12px;
             margin-bottom: 15px;
@@ -143,7 +137,6 @@ $userName = $_SESSION['nama'] ?? '';
 
         /* Content Page Area */
         #content {
-            width: 100%;
             padding: 30px;
             min-height: 100vh;
             transition: all 0.3s;
@@ -159,6 +152,7 @@ $userName = $_SESSION['nama'] ?? '';
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 15px;
         }
 
         .user-badge {
@@ -372,95 +366,232 @@ $userName = $_SESSION['nama'] ?? '';
             border-color: var(--accent-orange) !important;
             color: var(--accent-orange) !important;
         }
+
+        /* Mobile Navbar Styling Overrides */
+        .navbar-dark .navbar-nav .nav-link {
+            color: var(--sidebar-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .navbar-dark .navbar-nav .nav-link:hover,
+        .navbar-dark .navbar-nav .nav-link:focus {
+            color: #fff;
+            background-color: var(--sidebar-active-bg);
+        }
+
+        .navbar-dark .navbar-nav .nav-link.active {
+            color: #fff !important;
+            background-color: var(--sidebar-active-bg);
+        }
+
+        /* Responsiveness adjustments for smaller devices */
+        @media (max-width: 991.98px) {
+            #content {
+                padding: 20px 15px;
+            }
+            .top-navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 15px 20px;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+            .top-navbar h4 {
+                font-size: 1.2rem;
+            }
+            .user-badge {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+
+        /* Desktop stationary layout constraints */
+        @media (min-width: 992px) {
+            body {
+                height: 100vh;
+                overflow: hidden;
+            }
+            .layout-row {
+                height: 100vh;
+                overflow: hidden;
+            }
+            #sidebar {
+                height: 100vh;
+                overflow-y: auto;
+            }
+            #content {
+                height: 100vh;
+                overflow-y: auto;
+            }
+        }
     </style>
 </head>
 
 <body>
 
-    <div class="wrapper">
-        <!-- Sidebar -->
-        <nav id="sidebar">
-            <div class="sidebar-header text-center d-flex flex-column align-items-center">
-                <img src="assets/logoMrChicken.jpeg" alt="Logo MR. CHICKEN" class="rounded-circle mb-3 border" style="height: 60px; width: 60px; object-fit: cover; border-color: var(--accent-orange) !important; border-width: 2px !important;">
-                <div class="logo-text justify-content-center" style="font-size: 1rem; font-weight: 300; letter-spacing: 2px;">
+    <!-- Mobile Top Collapsible Navbar (Visible only on screens < 992px) -->
+    <nav class="navbar navbar-expand-lg navbar-dark d-lg-none sticky-top" style="background-color: var(--sidebar-bg); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); z-index: 1030; padding: 12px 15px;">
+        <div class="container-fluid">
+            <!-- Brand / Logo -->
+            <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
+                <img src="assets/logoMrChicken.jpeg" alt="Logo MR. CHICKEN" class="rounded-circle border" style="height: 35px; width: 35px; object-fit: cover; border-color: var(--accent-orange) !important; border-width: 1.5px !important;">
+                <span style="font-size: 1.05rem; font-weight: 300; letter-spacing: 1px; color: #fff;">
                     MR.<span style="font-weight: 700; color: var(--accent-orange);">CHICKEN</span>
-                    <span class="d-block w-100 mt-1" style="font-size: 0.75rem; letter-spacing: 4px; opacity: 0.6; font-weight: 300;">POS</span>
-                </div>
-            </div>
+                </span>
+            </a>
 
-            <ul class="list-unstyled components">
-                <p>Operasional</p>
-                <li class="<?= $currentPage === 'kasir' ? 'active' : '' ?>">
-                    <a href="index.php?page=kasir">
-                        <i class="fa-solid fa-cash-register"></i> POS Kasir (Order)
-                    </a>
-                </li>
-                <li class="<?= $currentPage === 'logistik' ? 'active' : '' ?>">
-                    <a href="index.php?page=logistik">
-                        <i class="fa-solid fa-truck-fast"></i> Logistik & Kirim
-                    </a>
-                </li>
-                <li class="<?= $currentPage === 'produk' ? 'active' : '' ?>">
-                    <a href="index.php?page=produk">
-                        <i class="fa-solid fa-boxes-stacked"></i> Stok & Harga Produk
-                    </a>
-                </li>
+            <!-- Toggler Button -->
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mobileSidebarCollapse" aria-controls="mobileSidebarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-                <?php if ($userRole === 'Owner'): ?>
-                    <p>Manajemen Owner</p>
-                    <li class="<?= $currentPage === 'dashboard' ? 'active' : '' ?>">
-                        <a href="index.php?page=dashboard">
-                            <i class="fa-solid fa-chart-line"></i> Dashboard
+            <!-- Collapsible Menu -->
+            <div class="collapse navbar-collapse" id="mobileSidebarCollapse">
+                <hr class="text-secondary my-2">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <span class="nav-link disabled text-uppercase small font-weight-bold text-muted ps-0" style="letter-spacing: 1px;">Operasional</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?= $currentPage === 'kasir' ? 'active' : '' ?>" href="index.php?page=kasir">
+                            <i class="fa-solid fa-cash-register me-2"></i> POS Kasir (Order)
                         </a>
                     </li>
-                    <li class="<?= $currentPage === 'hutang' ? 'active' : '' ?>">
-                        <a href="index.php?page=hutang">
-                            <i class="fa-solid fa-book-bookmark"></i> Buku Piutang
+                    <li class="nav-item">
+                        <a class="nav-link <?= $currentPage === 'logistik' ? 'active' : '' ?>" href="index.php?page=logistik">
+                            <i class="fa-solid fa-truck-fast me-2"></i> Logistik & Kirim
                         </a>
                     </li>
-                    <li class="<?= $currentPage === 'users' ? 'active' : '' ?>">
-                        <a href="index.php?page=users">
-                            <i class="fa-solid fa-users-gear"></i> Kelola Karyawan
+                    <li class="nav-item">
+                        <a class="nav-link <?= $currentPage === 'produk' ? 'active' : '' ?>" href="index.php?page=produk">
+                            <i class="fa-solid fa-boxes-stacked me-2"></i> Stok & Harga Produk
                         </a>
                     </li>
-                <?php endif; ?>
 
-                <p>Akun</p>
-                <li>
-                    <a href="index.php?page=logout" class="text-danger-hover">
-                        <i class="fa-solid fa-right-from-bracket text-danger"></i> Keluar
-                    </a>
-                </li>
-            </ul>
-            <div class="p-3 text-center text-muted small mt-auto border-top border-secondary">
-                v1.0-MVP &copy; 2026
+                    <?php if ($userRole === 'Owner'): ?>
+                        <li class="nav-item mt-2">
+                            <span class="nav-link disabled text-uppercase small font-weight-bold text-muted ps-0" style="letter-spacing: 1px;">Manajemen Owner</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?= $currentPage === 'dashboard' ? 'active' : '' ?>" href="index.php?page=dashboard">
+                                <i class="fa-solid fa-chart-line me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?= $currentPage === 'hutang' ? 'active' : '' ?>" href="index.php?page=hutang">
+                                <i class="fa-solid fa-book-bookmark me-2"></i> Buku Piutang
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?= $currentPage === 'users' ? 'active' : '' ?>" href="index.php?page=users">
+                                <i class="fa-solid fa-users-gear me-2"></i> Kelola Karyawan
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <li class="nav-item mt-2">
+                        <span class="nav-link disabled text-uppercase small font-weight-bold text-muted ps-0" style="letter-spacing: 1px;">Akun</span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="index.php?page=logout">
+                            <i class="fa-solid fa-right-from-bracket me-2 text-danger"></i> Keluar
+                        </a>
+                    </li>
+                </ul>
             </div>
-        </nav>
+        </div>
+    </nav>
 
-        <!-- Main Content Page -->
-        <div id="content">
-            <!-- Top Navbar -->
-            <div class="top-navbar">
-                <div class="d-flex align-items-center">
-                    <h4 class="m-0 font-weight-bold">
-                        <?php
-                        if ($currentPage === 'kasir') echo '<i class="fa-solid fa-cash-register text-orange me-2"></i> POS (Point of Sale)';
-                        elseif ($currentPage === 'logistik') echo '<i class="fa-solid fa-truck-fast text-orange me-2"></i> Manajemen Distribusi & Pengiriman';
-                        elseif ($currentPage === 'dashboard') echo '<i class="fa-solid fa-chart-line text-orange me-2"></i> Owner Dashboard';
-                        elseif ($currentPage === 'hutang') echo '<i class="fa-solid fa-book-bookmark text-orange me-2"></i> Catatan Piutang & Cicilan';
-                        elseif ($currentPage === 'users') echo '<i class="fa-solid fa-users-gear text-orange me-2"></i> Manajemen Pengguna & Karyawan';
-                        elseif ($currentPage === 'produk') echo '<i class="fa-solid fa-boxes-stacked text-orange me-2"></i> Stok & Harga Produk';
-                        else echo 'Aplikasi POS MR. CHICKEN';
-                        ?>
-                    </h4>
+    <!-- Main Layout Wrapper using Grid -->
+    <div class="container-fluid p-0">
+        <div class="row g-0 min-vh-100 layout-row">
+            <!-- Sidebar for Desktop View (Visible only on screens >= 992px) -->
+            <nav id="sidebar" class="col-lg-3 col-xl-2 d-none d-lg-flex flex-column">
+                <div class="sidebar-header text-center d-flex flex-column align-items-center">
+                    <img src="assets/logoMrChicken.jpeg" alt="Logo MR. CHICKEN" class="rounded-circle mb-3 border" style="height: 60px; width: 60px; object-fit: cover; border-color: var(--accent-orange) !important; border-width: 2px !important;">
+                    <div class="logo-text justify-content-center" style="font-size: 1rem; font-weight: 300; letter-spacing: 2px;">
+                        MR.<span style="font-weight: 700; color: var(--accent-orange);">CHICKEN</span>
+                        <span class="d-block w-100 mt-1" style="font-size: 0.75rem; letter-spacing: 4px; opacity: 0.6; font-weight: 300;">POS</span>
+                    </div>
                 </div>
-                <div class="user-badge shadow-sm">
-                    <i class="fa-solid fa-circle-user fa-lg text-secondary"></i>
-                    <span><?= htmlspecialchars($userName) ?></span>
-                    <span class="role-tag <?= $userRole === 'Owner' ? 'role-owner' : 'role-kasir' ?>">
-                        <?= htmlspecialchars($userRole) ?>
-                    </span>
-                </div>
-            </div>
 
-            <!-- Global Notification block removed to be placed locally above anchor layouts -->
+                <ul class="list-unstyled components">
+                    <p>Operasional</p>
+                    <li class="<?= $currentPage === 'kasir' ? 'active' : '' ?>">
+                        <a href="index.php?page=kasir">
+                            <i class="fa-solid fa-cash-register"></i> POS Kasir (Order)
+                        </a>
+                    </li>
+                    <li class="<?= $currentPage === 'logistik' ? 'active' : '' ?>">
+                        <a href="index.php?page=logistik">
+                            <i class="fa-solid fa-truck-fast"></i> Logistik & Kirim
+                        </a>
+                    </li>
+                    <li class="<?= $currentPage === 'produk' ? 'active' : '' ?>">
+                        <a href="index.php?page=produk">
+                            <i class="fa-solid fa-boxes-stacked"></i> Stok & Harga Produk
+                        </a>
+                    </li>
+
+                    <?php if ($userRole === 'Owner'): ?>
+                        <p>Manajemen Owner</p>
+                        <li class="<?= $currentPage === 'dashboard' ? 'active' : '' ?>">
+                            <a href="index.php?page=dashboard">
+                                <i class="fa-solid fa-chart-line"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="<?= $currentPage === 'hutang' ? 'active' : '' ?>">
+                            <a href="index.php?page=hutang">
+                                <i class="fa-solid fa-book-bookmark"></i> Buku Piutang
+                            </a>
+                        </li>
+                        <li class="<?= $currentPage === 'users' ? 'active' : '' ?>">
+                            <a href="index.php?page=users">
+                                <i class="fa-solid fa-users-gear"></i> Kelola Karyawan
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <p>Akun</p>
+                    <li>
+                        <a href="index.php?page=logout" class="text-danger-hover">
+                            <i class="fa-solid fa-right-from-bracket text-danger"></i> Keluar
+                        </a>
+                    </li>
+                </ul>
+                <div class="p-3 text-center text-muted small mt-auto border-top border-secondary">
+                    v1.0-MVP &copy; 2026
+                </div>
+            </nav>
+
+            <!-- Main Content Column -->
+            <div id="content" class="col-12 col-lg-9 col-xl-10">
+                <!-- Top Navbar -->
+                <div class="top-navbar">
+                    <div class="d-flex align-items-center">
+                        <h4 class="m-0 font-weight-bold">
+                            <?php
+                            if ($currentPage === 'kasir') echo '<i class="fa-solid fa-cash-register text-orange me-2"></i> POS (Point of Sale)';
+                            elseif ($currentPage === 'logistik') echo '<i class="fa-solid fa-truck-fast text-orange me-2"></i> Manajemen Distribusi & Pengiriman';
+                            elseif ($currentPage === 'dashboard') echo '<i class="fa-solid fa-chart-line text-orange me-2"></i> Owner Dashboard';
+                            elseif ($currentPage === 'hutang') echo '<i class="fa-solid fa-book-bookmark text-orange me-2"></i> Catatan Piutang & Cicilan';
+                            elseif ($currentPage === 'users') echo '<i class="fa-solid fa-users-gear text-orange me-2"></i> Manajemen Pengguna & Karyawan';
+                            elseif ($currentPage === 'produk') echo '<i class="fa-solid fa-boxes-stacked text-orange me-2"></i> Stok & Harga Produk';
+                            else echo 'Aplikasi POS MR. CHICKEN';
+                            ?>
+                        </h4>
+                    </div>
+                    <div class="user-badge shadow-sm">
+                        <i class="fa-solid fa-circle-user fa-lg text-secondary"></i>
+                        <span><?= htmlspecialchars($userName) ?></span>
+                        <span class="role-tag <?= $userRole === 'Owner' ? 'role-owner' : 'role-kasir' ?>">
+                            <?= htmlspecialchars($userRole) ?>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Container Fluid for page content -->
+                <div class="container-fluid px-0">

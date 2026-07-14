@@ -49,7 +49,7 @@ require_once 'views/templates/header.php';
             <div class="card-body">
                 <h5 class="card-title font-weight-bold mb-4"><i class="fa-solid fa-book text-orange me-2"></i>Buku Hutang Aktif (Belum Lunas)</h5>
                 
-                <div class="table-responsive-scroll">
+                <div class="table-responsive table-responsive-scroll">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>

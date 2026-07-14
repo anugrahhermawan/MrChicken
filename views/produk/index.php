@@ -19,7 +19,7 @@ $isOwner = (isset($_SESSION['role']) && $_SESSION['role'] === 'Owner');
             <?php endif; ?>
         </div>
 
-        <div class="table-responsive-scroll">
+        <div class="table-responsive table-responsive-scroll">
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
