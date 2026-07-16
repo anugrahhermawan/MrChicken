@@ -27,9 +27,9 @@ CREATE TABLE IF NOT EXISTS `detail_transaksi` (
   KEY `id_produk` (`id_produk`),
   CONSTRAINT `detail_transaksi_ibfk_1` FOREIGN KEY (`id_transaksi`) REFERENCES `transaksi` (`id_transaksi`) ON DELETE CASCADE,
   CONSTRAINT `detail_transaksi_ibfk_2` FOREIGN KEY (`id_produk`) REFERENCES `produk` (`id_produk`)
-) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table mrchicken.detail_transaksi: ~21 rows (approximately)
+-- Dumping data for table mrchicken.detail_transaksi: ~18 rows (approximately)
 INSERT INTO `detail_transaksi` (`id_detail`, `id_transaksi`, `id_produk`, `jumlah_berat_kg`, `harga_satuan`, `subtotal`) VALUES
 	(1, 1, 1, 1.00, 50000, 50000),
 	(2, 1, 2, 2.00, 48000, 96000),
@@ -51,7 +51,15 @@ INSERT INTO `detail_transaksi` (`id_detail`, `id_transaksi`, `id_produk`, `jumla
 	(35, 28, 1, 20.00, 50000, 1000000),
 	(36, 29, 1, 4.00, 50000, 200000),
 	(37, 29, 4, 4.00, 25000, 100000),
-	(38, 30, 2, 3.00, 48000, 144000);
+	(38, 30, 2, 3.00, 48000, 144000),
+	(48, 39, 1, 3.00, 50000, 150000),
+	(50, 41, 4, 10.00, 25000, 250000),
+	(51, 42, 3, 20.00, 35000, 700000),
+	(54, 45, 3, 2.00, 35000, 70000),
+	(55, 46, 2, 4.00, 48000, 192000),
+	(56, 47, 2, 1.00, 48000, 48000),
+	(67, 58, 2, 1.00, 48000, 48000),
+	(68, 59, 2, 2.00, 48000, 96000);
 
 -- Dumping structure for table mrchicken.hutang
 CREATE TABLE IF NOT EXISTS `hutang` (
@@ -68,15 +76,19 @@ CREATE TABLE IF NOT EXISTS `hutang` (
   KEY `id_transaksi` (`id_transaksi`),
   CONSTRAINT `hutang_ibfk_1` FOREIGN KEY (`id_pelanggan`) REFERENCES `pelanggan` (`id_pelanggan`),
   CONSTRAINT `hutang_ibfk_2` FOREIGN KEY (`id_transaksi`) REFERENCES `transaksi` (`id_transaksi`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table mrchicken.hutang: ~5 rows (approximately)
-INSERT INTO `hutang` (`id_hutang`, `id_pelanggan`, `id_transaksi`, `jumlah_hutang`, `sisa_hutang`, `tanggal_hutang`) VALUES
-	(1, 3, 1, 170000, 0, '2026-07-07'),
-	(5, 1, 22, 600000, 600000, '2026-07-07'),
-	(6, 2, 27, 1440000, 1440000, '2026-07-08'),
-	(7, 3, 29, 300000, 300000, '2026-07-08'),
-	(8, 4, 30, 144000, 144000, '2026-07-13');
+-- Dumping data for table mrchicken.hutang: ~6 rows (approximately)
+INSERT INTO `hutang` (`id_hutang`, `id_pelanggan`, `id_transaksi`, `jumlah_hutang`, `sisa_hutang`, `status`, `tanggal_hutang`, `due_date`) VALUES
+	(1, 3, 1, 170000, 0, 'Aktif', '2026-07-07', NULL),
+	(5, 1, 22, 600000, 0, 'Lunas', '2026-07-07', NULL),
+	(6, 2, 27, 1440000, 0, 'Write-Off', '2026-07-08', NULL),
+	(7, 3, 29, 300000, 0, 'Write-Off', '2026-07-08', NULL),
+	(8, 4, 30, 144000, 0, 'Write-Off', '2026-07-13', NULL),
+	(15, 3, 41, 250000, 0, 'Lunas', '2026-07-16', '2026-07-23'),
+	(18, 1, 45, 70000, 0, 'Lunas', '2026-07-16', '2026-07-23'),
+	(19, 4, 46, 192000, 0, 'Lunas', '2026-07-16', '2026-07-23'),
+	(29, 2, 58, 48000, 0, 'Lunas', '2026-07-16', '2026-07-23');
 
 -- Dumping structure for table mrchicken.pelanggan
 CREATE TABLE IF NOT EXISTS `pelanggan` (
@@ -89,23 +101,39 @@ CREATE TABLE IF NOT EXISTS `pelanggan` (
   PRIMARY KEY (`id_pelanggan`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Dumping data for table mrchicken.pelanggan: ~4 rows (approximately)
+INSERT INTO `pelanggan` (`id_pelanggan`, `nama_pelanggan`, `no_hp`, `alamat`, `saldo_hutang`, `credit_limit`) VALUES
+	(1, 'Budi (Pelanggan A)', '08123456789', 'Jl. Merdeka No. 1, Kota A', 0, 1500000),
+	(2, 'Ani (Pelanggan B)', '08987654321', 'Jl. Sudirman No. 2, Kota B', 0, 2000000),
+	(3, 'acop', '08222193631982', 'jl garuda sakti', 0, 1000000),
+	(4, 'farrel', '08213233145', 'jl garuda sakti', 0, 500000);
+
 -- Dumping structure for table mrchicken.pembayaran_hutang
 CREATE TABLE IF NOT EXISTS `pembayaran_hutang` (
-  `id_pembayaran` INT AUTO_INCREMENT PRIMARY KEY,
-  `id_hutang` INT NOT NULL,
-  `nominal_bayar` INT NOT NULL,
-  `tanggal_bayar` DATETIME NOT NULL,
-  `created_by` INT NOT NULL,
-  CONSTRAINT `fk_pembayaran_hutang_hutang` FOREIGN KEY (`id_hutang`) REFERENCES `hutang`(`id_hutang`) ON DELETE CASCADE,
-  CONSTRAINT `fk_pembayaran_hutang_users` FOREIGN KEY (`created_by`) REFERENCES `users`(`id_user`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `id_pembayaran` int NOT NULL AUTO_INCREMENT,
+  `id_hutang` int NOT NULL,
+  `nominal_bayar` int NOT NULL,
+  `tipe` enum('Bayar','Adjustment','Write-Off') DEFAULT 'Bayar',
+  `tanggal_bayar` datetime NOT NULL,
+  `created_by` int NOT NULL,
+  PRIMARY KEY (`id_pembayaran`),
+  KEY `fk_pembayaran_hutang_hutang` (`id_hutang`),
+  KEY `fk_pembayaran_hutang_users` (`created_by`),
+  CONSTRAINT `fk_pembayaran_hutang_hutang` FOREIGN KEY (`id_hutang`) REFERENCES `hutang` (`id_hutang`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pembayaran_hutang_users` FOREIGN KEY (`created_by`) REFERENCES `users` (`id_user`)
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table mrchicken.pelanggan: ~4 rows (approximately)
-INSERT INTO `pelanggan` (`id_pelanggan`, `nama_pelanggan`, `no_hp`, `alamat`, `saldo_hutang`) VALUES
-	(1, 'Budi (Pelanggan A)', '08123456789', 'Jl. Merdeka No. 1, Kota A', 600000),
-	(2, 'Ani (Pelanggan B)', '08987654321', 'Jl. Sudirman No. 2, Kota B', 1440000),
-	(3, 'acop', '08222193631982', 'jl garuda sakti', 300000),
-	(4, 'farrel', '08213233145', 'jl garuda sakti', 144000);
+-- Dumping data for table mrchicken.pembayaran_hutang: ~1 rows (approximately)
+INSERT INTO `pembayaran_hutang` (`id_pembayaran`, `id_hutang`, `nominal_bayar`, `tipe`, `tanggal_bayar`, `created_by`) VALUES
+	(1, 5, 600000, 'Bayar', '2026-07-15 22:34:34', 1),
+	(2, 6, 500000, 'Bayar', '2026-07-15 22:43:59', 1),
+	(3, 7, 300000, 'Bayar', '2026-07-15 22:49:06', 1),
+	(5, 6, 940000, 'Write-Off', '2026-07-15 23:06:48', 1),
+	(6, 8, 144000, 'Write-Off', '2026-07-15 23:06:50', 1),
+	(14, 15, 250000, 'Bayar', '2026-07-16 07:04:33', 1),
+	(18, 18, 70000, 'Bayar', '2026-07-16 08:13:09', 1),
+	(19, 19, 192000, 'Bayar', '2026-07-16 08:13:17', 1),
+	(30, 29, 48000, 'Bayar', '2026-07-16 17:28:35', 1);
 
 -- Dumping structure for table mrchicken.produk
 CREATE TABLE IF NOT EXISTS `produk` (
@@ -133,12 +161,12 @@ CREATE TABLE IF NOT EXISTS `stok` (
   CONSTRAINT `stok_ibfk_1` FOREIGN KEY (`id_produk`) REFERENCES `produk` (`id_produk`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table mrchicken.stok: ~4 rows (approximately)
+-- Dumping data for table mrchicken.stok: ~3 rows (approximately)
 INSERT INTO `stok` (`id_stok`, `id_produk`, `jumlah_kg`) VALUES
-	(1, 1, 54.50),
-	(2, 2, 51.50),
-	(3, 3, 41.70),
-	(4, 4, 4.00);
+	(1, 1, 51.50),
+	(2, 2, 43.50),
+	(3, 3, 19.70),
+	(4, 4, 20.00);
 
 -- Dumping structure for table mrchicken.transaksi
 CREATE TABLE IF NOT EXISTS `transaksi` (
@@ -158,24 +186,32 @@ CREATE TABLE IF NOT EXISTS `transaksi` (
   KEY `id_user` (`id_user`),
   CONSTRAINT `transaksi_ibfk_1` FOREIGN KEY (`id_pelanggan`) REFERENCES `pelanggan` (`id_pelanggan`),
   CONSTRAINT `transaksi_ibfk_2` FOREIGN KEY (`id_user`) REFERENCES `users` (`id_user`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=60 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table mrchicken.transaksi: ~14 rows (approximately)
-INSERT INTO `transaksi` (`id_transaksi`, `id_pelanggan`, `id_user`, `tanggal`, `waktu`, `slot_waktu`, `total_berat_akumulatif`, `metode_pembayaran`, `status_pengiriman`, `total_harga`) VALUES
-	(1, 3, 1, '2026-07-07', '02:05:45', 'Pagi', 3.50, 'Hutang', 'Selesai', 170000),
-	(2, 3, 2, '2026-07-07', '02:07:48', 'Pagi', 0.50, 'Lunas', 'Selesai', 25000),
-	(19, 1, 1, '2026-07-07', '04:12:05', 'Pagi', 1.50, 'Lunas', 'Selesai', 72000),
-	(20, 2, 1, '2026-07-07', '04:51:09', 'Sore', 6.30, 'Lunas', 'Selesai', 272500),
-	(21, 2, 1, '2026-07-07', '04:51:17', 'Pagi', 7.00, 'Lunas', 'Selesai', 350000),
-	(22, 1, 1, '2026-07-07', '05:26:41', 'Sore', 15.00, 'Hutang', 'Selesai', 600000),
-	(23, 2, 1, '2026-07-07', '05:35:35', 'Pagi', 4.00, 'Lunas', 'Selesai', 100000),
-	(24, 3, 1, '2026-07-07', '05:42:32', 'Pagi', 10.00, 'Lunas', 'Selesai', 250000),
-	(25, 1, 1, '2026-07-07', '05:42:42', 'Pagi', 6.00, 'Lunas', 'Selesai', 210000),
-	(26, 1, 1, '2026-07-07', '05:42:51', 'Pagi', 5.00, 'Lunas', 'Selesai', 240000),
-	(27, 2, 1, '2026-07-08', '09:19:02', 'Sore', 30.00, 'Hutang', 'Selesai', 1440000),
-	(28, 1, 1, '2026-07-08', '09:20:12', 'Pagi', 25.00, 'Lunas', 'Selesai', 1200000),
-	(29, 3, 1, '2026-07-08', '09:21:18', 'Pagi', 8.00, 'Hutang', 'Selesai', 300000),
-	(30, 4, 1, '2026-07-13', '04:35:56', 'Sore', 3.00, 'Hutang', 'Selesai', 144000);
+-- Dumping data for table mrchicken.transaksi: ~15 rows (approximately)
+INSERT INTO `transaksi` (`id_transaksi`, `id_pelanggan`, `id_user`, `tanggal`, `due_date`, `waktu`, `slot_waktu`, `total_berat_akumulatif`, `metode_pembayaran`, `status_pengiriman`, `total_harga`) VALUES
+	(1, 3, 1, '2026-07-07', NULL, '02:05:45', 'Pagi', 3.50, 'Hutang', 'Selesai', 170000),
+	(2, 3, 2, '2026-07-07', NULL, '02:07:48', 'Pagi', 0.50, 'Lunas', 'Selesai', 25000),
+	(19, 1, 1, '2026-07-07', NULL, '04:12:05', 'Pagi', 1.50, 'Lunas', 'Selesai', 72000),
+	(20, 2, 1, '2026-07-07', NULL, '04:51:09', 'Sore', 6.30, 'Lunas', 'Selesai', 272500),
+	(21, 2, 1, '2026-07-07', NULL, '04:51:17', 'Pagi', 7.00, 'Lunas', 'Selesai', 350000),
+	(22, 1, 1, '2026-07-07', NULL, '05:26:41', 'Sore', 15.00, 'Hutang', 'Selesai', 600000),
+	(23, 2, 1, '2026-07-07', NULL, '05:35:35', 'Pagi', 4.00, 'Lunas', 'Selesai', 100000),
+	(24, 3, 1, '2026-07-07', NULL, '05:42:32', 'Pagi', 10.00, 'Lunas', 'Selesai', 250000),
+	(25, 1, 1, '2026-07-07', NULL, '05:42:42', 'Pagi', 6.00, 'Lunas', 'Selesai', 210000),
+	(26, 1, 1, '2026-07-07', NULL, '05:42:51', 'Pagi', 5.00, 'Lunas', 'Selesai', 240000),
+	(27, 2, 1, '2026-07-08', NULL, '09:19:02', 'Sore', 30.00, 'Hutang', 'Selesai', 1440000),
+	(28, 1, 1, '2026-07-08', NULL, '09:20:12', 'Pagi', 25.00, 'Lunas', 'Selesai', 1200000),
+	(29, 3, 1, '2026-07-08', NULL, '09:21:18', 'Pagi', 8.00, 'Hutang', 'Selesai', 300000),
+	(30, 4, 1, '2026-07-13', NULL, '04:35:56', 'Sore', 3.00, 'Hutang', 'Selesai', 144000),
+	(39, 2, 1, '2026-07-15', NULL, '23:50:54', 'Pagi', 3.00, 'Lunas', 'Selesai', 150000),
+	(41, 3, 1, '2026-07-16', '2026-07-23', '07:01:13', 'Pagi', 10.00, 'Hutang', 'Selesai', 250000),
+	(42, 2, 1, '2026-07-16', NULL, '07:01:45', 'Pagi', 20.00, 'Lunas', 'Selesai', 700000),
+	(45, 1, 1, '2026-07-16', '2026-07-23', '08:11:25', 'Pagi', 2.00, 'Hutang', 'Selesai', 70000),
+	(46, 4, 1, '2026-07-16', '2026-07-23', '08:11:32', 'Pagi', 4.00, 'Hutang', 'Selesai', 192000),
+	(47, 1, 1, '2026-07-16', NULL, '08:16:10', 'Pagi', 1.00, 'Lunas', 'Selesai', 48000),
+	(58, 2, 1, '2026-07-16', '2026-07-23', '15:38:54', 'Pagi', 1.00, 'Hutang', 'Selesai', 48000),
+	(59, 2, 1, '2026-07-16', NULL, '16:23:28', 'Pagi', 2.00, 'Lunas', 'Selesai', 96000);
 
 -- Dumping structure for table mrchicken.users
 CREATE TABLE IF NOT EXISTS `users` (
@@ -190,7 +226,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Dumping data for table mrchicken.users: ~3 rows (approximately)
+-- Dumping data for table mrchicken.users: ~2 rows (approximately)
 INSERT INTO `users` (`id_user`, `username`, `password`, `nama_pengguna`, `role`, `status_aktif`, `is_deleted`) VALUES
 	(1, 'owner', '$2y$10$FwU/.VXvv35NZ8IR5ADm8.qYBNQKX9JctQVv7KBKDDyQmR5HYp5I.', 'Owner', 'Owner', 1, 0),
 	(2, 'kasir', '$2y$10$mXzPI9xXFvl4HNHnx8BjCOHRHMw5dCz45rScUXyRwbVlmZmgttHBK', 'Siti Kasir', 'Karyawan', 1, 1),
