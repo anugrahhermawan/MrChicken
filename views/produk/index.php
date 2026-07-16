@@ -23,12 +23,12 @@ $isOwner = (isset($_SESSION['role']) && $_SESSION['role'] === 'Owner');
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th width="80" class="text-center">ID</th>
+                        <th width="80" class="text-center d-none d-sm-table-cell">ID</th>
                         <th>Nama Produk</th>
-                        <th>Harga/Kg</th>
+                        <th class="d-none d-md-table-cell">Harga/Kg</th>
                         <th>Stok (Kg)</th>
                         <?php if ($isOwner): ?>
-                            <th class="text-center" width="220">Aksi (Owner Only)</th>
+                            <th class="text-center" width="120">Aksi</th>
                         <?php endif; ?>
                     </tr>
                 </thead>
@@ -44,9 +44,14 @@ $isOwner = (isset($_SESSION['role']) && $_SESSION['role'] === 'Owner');
                         foreach ($produk as $p): 
                         ?>
                             <tr>
-                                <td class="text-center font-monospace font-weight-bold">#<?= $p->id_produk ?></td>
-                                <td><strong><?= htmlspecialchars($p->nama_produk) ?></strong></td>
-                                <td class="font-weight-bold text-success">Rp <?= number_format($p->harga_per_kg, 0, ',', '.') ?></td>
+                                <td class="text-center font-monospace font-weight-bold d-none d-sm-table-cell">#<?= $p->id_produk ?></td>
+                                <td>
+                                    <strong><?= htmlspecialchars($p->nama_produk) ?></strong>
+                                    <div class="d-md-none text-success small fw-bold mt-1">
+                                        Rp <?= number_format($p->harga_per_kg, 0, ',', '.') ?>/Kg
+                                    </div>
+                                </td>
+                                <td class="font-weight-bold text-success d-none d-md-table-cell">Rp <?= number_format($p->harga_per_kg, 0, ',', '.') ?></td>
                                 <td>
                                     <span class="font-weight-bold <?= $p->stok_kg <= 10 ? 'text-danger' : 'text-dark' ?>">
                                         <?= number_format($p->stok_kg, 1, ',', '.') ?> Kg
@@ -57,18 +62,27 @@ $isOwner = (isset($_SESSION['role']) && $_SESSION['role'] === 'Owner');
                                 </td>
                                 <?php if ($isOwner): ?>
                                     <td class="text-center">
-                                        <!-- Tombol Edit -->
-                                        <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditProduk<?= $p->id_produk ?>">
-                                            <i class="fa-solid fa-pen-to-square me-1"></i> Edit
-                                        </button>
-
-                                        <!-- Tombol Hapus -->
-                                        <form action="index.php?page=produk-hapus" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk ini? Produk yang sudah memiliki riwayat penjualan tidak akan bisa dihapus.');">
-                                            <input type="hidden" name="id_produk" value="<?= $p->id_produk ?>">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                <i class="fa-solid fa-trash-can"></i>
+                                        <div class="dropdown d-inline-block">
+                                            <button class="btn btn-sm btn-light border dropdown-toggle dropdown-btn-compact" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                                <i class="fa-solid fa-ellipsis-vertical text-muted"></i>
                                             </button>
-                                        </form>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 dropdown-menu-custom">
+                                                <li>
+                                                    <a class="dropdown-item py-2 text-primary" href="#" data-bs-toggle="modal" data-bs-target="#modalEditProduk<?= $p->id_produk ?>">
+                                                        <i class="fa-solid fa-pen-to-square me-2"></i> Edit Produk
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider my-1"></li>
+                                                <li>
+                                                    <form action="index.php?page=produk-hapus" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus produk ini? Produk yang sudah memiliki riwayat penjualan tidak akan bisa dihapus.');">
+                                                        <input type="hidden" name="id_produk" value="<?= $p->id_produk ?>">
+                                                        <button type="submit" class="dropdown-item py-2 text-danger border-0 bg-transparent w-100 text-start">
+                                                            <i class="fa-solid fa-trash-can me-2"></i> Hapus
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </td>
                                 <?php endif; ?>
                             </tr>
@@ -84,7 +98,7 @@ $isOwner = (isset($_SESSION['role']) && $_SESSION['role'] === 'Owner');
     <!-- Modal Tambah Produk Baru -->
     <div class="modal fade" id="modalTambahProduk" tabindex="-1" aria-labelledby="modalTambahProdukLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 16px;">
+            <div class="modal-content modal-content-custom">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title font-weight-bold" id="modalTambahProdukLabel"><i class="fa-solid fa-circle-plus text-primary me-2"></i>Tambah Produk Baru</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -124,7 +138,7 @@ $isOwner = (isset($_SESSION['role']) && $_SESSION['role'] === 'Owner');
         <!-- Modal Edit Produk -->
         <div class="modal fade" id="modalEditProduk<?= $p->id_produk ?>" tabindex="-1" aria-labelledby="modalEditProdukLabel<?= $p->id_produk ?>" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content" style="border-radius: 16px;">
+                <div class="modal-content modal-content-custom">
                     <div class="modal-header border-0 pb-0">
                         <h5 class="modal-title font-weight-bold" id="modalEditProdukLabel<?= $p->id_produk ?>"><i class="fa-solid fa-pen-to-square text-primary me-2"></i>Edit Data Produk</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

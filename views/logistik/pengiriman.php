@@ -34,10 +34,29 @@ $persenSore = ($sore_berat / 60) * 100;
             </div>
         </form>
     </div>
+</div>
+
 <?php require_once 'views/templates/notifications.php'; ?>
-<div class="row" id="logistik-board">
+
+<!-- Mobile Tab Switcher (Visible only on mobile < 992px) -->
+<div class="d-lg-none mb-4">
+    <ul class="nav nav-pills nav-fill bg-white p-1 rounded-3 shadow-sm border border-slate-light" id="logistikTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active font-weight-bold" id="pagi-tab" data-bs-toggle="tab" data-bs-target="#slot-pagi-pane" type="button" role="tab" aria-controls="slot-pagi-pane" aria-selected="true">
+                <i class="fa-solid fa-cloud-sun me-1 text-warning"></i> Pagi
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link font-weight-bold" id="sore-tab" data-bs-toggle="tab" data-bs-target="#slot-sore-pane" type="button" role="tab" aria-controls="slot-sore-pane" aria-selected="false">
+                <i class="fa-solid fa-cloud-moon me-1 text-info"></i> Sore
+            </button>
+        </li>
+    </ul>
+</div>
+
+<div class="row tab-content responsive-tab-content" id="logistik-board">
     <!-- Slot Pagi (Batas 60 Kg) -->
-    <div class="col-lg-6 mb-4">
+    <div class="tab-pane fade show active col-lg-6 mb-4" id="slot-pagi-pane" role="tabpanel" aria-labelledby="pagi-tab">
         <div class="card premium-card p-4 h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -48,7 +67,7 @@ $persenSore = ($sore_berat / 60) * 100;
                 </div>
 
                 <!-- Progress Bar Muatan -->
-                <div class="progress mb-4" style="height: 10px; border-radius: 5px;">
+                <div class="progress mb-4 progress-bar-medium">
                     <div class="progress-bar <?= $persenPagi > 90 ? 'bg-danger' : ($persenPagi > 70 ? 'bg-warning' : 'bg-success') ?>" 
                          role="progressbar" style="width: <?= min(100, $persenPagi) ?>%" 
                          aria-valuenow="<?= $pagi_berat ?>" aria-valuemin="0" aria-valuemax="60"></div>
@@ -62,9 +81,9 @@ $persenSore = ($sore_berat / 60) * 100;
                         foreach ($paged_pagi as $t): 
                             $items = $t->details;
                         ?>
-                            <div class="border rounded-3 p-3 mb-3 shadow-sm position-relative" style="<?= $t->is_menggantung ? 'border-left: 4px solid #EF4444 !important; background-color: #fffafb;' : 'background-color: #ffffff;' ?>">
+                            <div class="border rounded-3 p-3 mb-3 shadow-sm position-relative <?= $t->is_menggantung ? 'order-card-overdue' : 'order-card-regular' ?>">
                                 <?php if ($t->is_menggantung): ?>
-                                    <div class="alert alert-danger p-2 small mb-2 d-flex align-items-center gap-2" style="border-radius: 8px;">
+                                    <div class="alert alert-danger p-2 small mb-2 d-flex align-items-center gap-2 rounded-8">
                                         <i class="fa-solid fa-triangle-exclamation text-danger fa-lg"></i>
                                         <div>
                                             <strong>⚠️ Transaksi Menggantung!</strong> (Tanggal: <?= date('d/m/Y', strtotime($t->tanggal)) ?>) - Segera Konfirmasi
@@ -151,7 +170,7 @@ $persenSore = ($sore_berat / 60) * 100;
     </div>
 
     <!-- Slot Sore (Batas 60 Kg) -->
-    <div class="col-lg-6 mb-4">
+    <div class="tab-pane fade col-lg-6 mb-4" id="slot-sore-pane" role="tabpanel" aria-labelledby="sore-tab">
         <div class="card premium-card p-4 h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -162,7 +181,7 @@ $persenSore = ($sore_berat / 60) * 100;
                 </div>
 
                 <!-- Progress Bar Muatan -->
-                <div class="progress mb-4" style="height: 10px; border-radius: 5px;">
+                <div class="progress mb-4 progress-bar-medium">
                     <div class="progress-bar <?= $persenSore > 90 ? 'bg-danger' : ($persenSore > 70 ? 'bg-warning' : 'bg-success') ?>" 
                          role="progressbar" style="width: <?= min(100, $persenSore) ?>%" 
                          aria-valuenow="<?= $sore_berat ?>" aria-valuemin="0" aria-valuemax="60"></div>
@@ -176,9 +195,9 @@ $persenSore = ($sore_berat / 60) * 100;
                         foreach ($paged_sore as $t): 
                             $items = $t->details;
                         ?>
-                            <div class="border rounded-3 p-3 mb-3 shadow-sm position-relative" style="<?= $t->is_menggantung ? 'border-left: 4px solid #EF4444 !important; background-color: #fffafb;' : 'background-color: #ffffff;' ?>">
+                            <div class="border rounded-3 p-3 mb-3 shadow-sm position-relative <?= $t->is_menggantung ? 'order-card-overdue' : 'order-card-regular' ?>">
                                 <?php if ($t->is_menggantung): ?>
-                                    <div class="alert alert-danger p-2 small mb-2 d-flex align-items-center gap-2" style="border-radius: 8px;">
+                                    <div class="alert alert-danger p-2 small mb-2 d-flex align-items-center gap-2 rounded-8">
                                         <i class="fa-solid fa-triangle-exclamation text-danger fa-lg"></i>
                                         <div>
                                             <strong>⚠️ Transaksi Menggantung!</strong> (Tanggal: <?= date('d/m/Y', strtotime($t->tanggal)) ?>) - Segera Konfirmasi

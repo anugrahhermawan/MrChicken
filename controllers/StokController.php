@@ -112,7 +112,7 @@ class StokController extends Controller {
             }
 
             // Memastikan status transaksi masih Pending atau Pre-Order sebelum dikurangi stoknya
-            if ($transaksi->status_pengiriman == 'Selesai') {
+            if ($transaksi->status_pengiriman == STATUS_PENGIRIMAN_SELESAI) {
                 $_SESSION['error'] = "Transaksi sudah berstatus Selesai sebelumnya!";
                 header('Location: index.php?page=logistik#logistik-board');
                 exit();
@@ -149,7 +149,7 @@ class StokController extends Controller {
 
             if ($potongBerhasil) {
                 // Update status transaksi menjadi 'Selesai'
-                $this->transaksiModel->updateStatusPengiriman($id_transaksi, 'Selesai');
+                $this->transaksiModel->updateStatusPengiriman($id_transaksi, STATUS_PENGIRIMAN_SELESAI);
                 $_SESSION['success'] = "Pengiriman berhasil dikonfirmasi dan stok telah dipotong.";
             } else {
                 $_SESSION['error'] = "Terjadi kesalahan saat memotong stok!";

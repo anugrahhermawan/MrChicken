@@ -28,92 +28,10 @@ class HutangController extends Controller {
         }
     }
 
-    // Dashboard Owner dengan paginasi transaksi (maks 10 per halaman)
-    public function dashboard(): void {
-        $this->checkOwner();
 
-        $tanggal = $_GET['tanggal'] ?? date('Y-m-d');
 
-        // Ambil data transaksi hari ini
-        $transaksiHariIni = $this->transaksiModel->getPengirimanHarian($tanggal);
-
-        // Hitung metrik dashboard berdasarkan semua transaksi hari ini
-        $omzetHariIni = 0;
-        $volumeHariIni = 0;
-        foreach ($transaksiHariIni as $t) {
-            if ($t->status_pengiriman === 'Selesai') {
-                $omzetHariIni += $t->total_harga;
-                $volumeHariIni += $t->total_berat_akumulatif;
-            }
-        }
-
-        // Paginasi: Batasi 10 transaksi per halaman
-        $total_records = count($transaksiHariIni);
-        $limit = 10;
-        $total_pages = ceil($total_records / $limit);
-        if ($total_pages < 1) $total_pages = 1;
-
-        $currentPageNum = isset($_GET['p']) ? (int)$_GET['p'] : 1;
-        if ($currentPageNum < 1) $currentPageNum = 1;
-        if ($currentPageNum > $total_pages) $currentPageNum = $total_pages;
-
-        $offset = ($currentPageNum - 1) * $limit;
-        $pagedTransaksi = array_slice($transaksiHariIni, $offset, $limit);
-
-        // Preload details HANYA untuk transaksi yang ada di halaman aktif
-        foreach ($pagedTransaksi as $t) {
-            $t->details = $this->transaksiModel->getDetails($t->id_transaksi);
-        }
-
-        // Hitung sisa slot pengiriman hari ini
-        $beratPagi = $this->transaksiModel->getBeratAkumulatif($tanggal, 'Pagi');
-        $beratSore = $this->transaksiModel->getBeratAkumulatif($tanggal, 'Sore');
-
-        $sisaPagi = max(0.0, 60.0 - $beratPagi);
-        $sisaSore = max(0.0, 60.0 - $beratSore);
-
-        // Hitung total piutang yang belum tertagih (dari semua pelanggan)
-        $totalPiutang = 0;
-        $pelanggan = $this->pelangganModel->getAll();
-        foreach ($pelanggan as $p) {
-            $totalPiutang += $p->saldo_hutang;
-        }
-
-        // Laporan grafik harian, mingguan, bulanan
-        $harianOmzet = array_reverse($this->transaksiModel->getOmzetStats($tanggal));
-        $mingguanOmzet = array_reverse($this->transaksiModel->getWeeklyOmzetStats($tanggal));
-        $bulananOmzet = array_reverse($this->transaksiModel->getMonthlyOmzetStats($tanggal));
-
-        // Laporan produk harian (7 hari), mingguan (30 hari), bulanan (180 hari)
-        $harianProduk = $this->transaksiModel->getProductSalesStatsByPeriod(7, $tanggal);
-        $mingguanProduk = $this->transaksiModel->getProductSalesStatsByPeriod(30, $tanggal);
-        $bulananProduk = $this->transaksiModel->getProductSalesStatsByPeriod(180, $tanggal);
-
-        $data = [
-            'tanggal' => $tanggal,
-            'transaksi' => $pagedTransaksi,
-            'omzet' => $omzetHariIni,
-            'volume' => $volumeHariIni,
-            'sisa_pagi' => $sisaPagi,
-            'sisa_sore' => $sisaSore,
-            'total_piutang' => $totalPiutang,
-            'chart_data_harian' => $harianOmzet,
-            'chart_data_mingguan' => $mingguanOmzet,
-            'chart_data_bulanan' => $bulananOmzet,
-            'product_harian' => $harianProduk,
-            'product_mingguan' => $mingguanProduk,
-            'product_bulanan' => $bulananProduk,
-            'current_page' => $currentPageNum,
-            'total_pages' => $total_pages
-        ];
-
-        $this->view('owner/dashboard', $data);
-    }
-
-    // Menampilkan buku hutang & piutang pelanggan dengan paginasi (maks 10 per halaman)
+    // Menampilkan buku hutang & piutang pelanggan / pencatatan cicilan dengan paginasi
     public function index(): void {
-        $this->checkOwner();
-
         $hutangAktifAll = $this->hutangModel->getHutangAktif();
 
         // Paginasi: Batasi 10 hutang per halaman
@@ -129,9 +47,59 @@ class HutangController extends Controller {
         $offset = ($currentPageNum - 1) * $limit;
         $pagedHutang = array_slice($hutangAktifAll, $offset, $limit);
 
+        // Fetch data for Owner specific reports
+        $allPelanggan = [];
+        $riwayatPembayaran = [];
+        $aging = [
+            'current' => 0,
+            'under_90' => 0,
+            'over_90' => 0
+        ];
+        $totalPiutang = 0;
+
+        if (isset($_SESSION['role']) && $_SESSION['role'] === 'Owner') {
+            $allPelanggan = $this->pelangganModel->getAll();
+            $riwayatPembayaran = $this->hutangModel->getRiwayatPembayaran();
+            
+            // Calculate Aging AR
+            $today = new DateTime();
+            foreach ($this->hutangModel->getHutangAktif() as $h) {
+                $totalPiutang += $h->sisa_hutang;
+                if (empty($h->due_date)) {
+                    $aging['current'] += $h->sisa_hutang;
+                    continue;
+                }
+                
+                $dueDate = new DateTime($h->due_date);
+                if ($today <= $dueDate) {
+                    $aging['current'] += $h->sisa_hutang;
+                } else {
+                    $interval = $today->diff($dueDate);
+                    $days = $interval->days;
+                    if ($days <= 90) {
+                        $aging['under_90'] += $h->sisa_hutang;
+                    } else {
+                        $aging['over_90'] += $h->sisa_hutang;
+                    }
+                }
+            }
+        }
+
+        // Preview bukti pembayaran
+        $lastPembayaran = null;
+        if (isset($_SESSION['last_pembayaran_id'])) {
+            $lastPembayaran = $this->hutangModel->getPembayaranById($_SESSION['last_pembayaran_id']);
+            unset($_SESSION['last_pembayaran_id']);
+        }
+
         $data = [
             'hutang_aktif' => $pagedHutang,
             'pelanggan_hutang' => $this->hutangModel->getPelangganBerhutang(),
+            'all_pelanggan' => $allPelanggan,
+            'riwayat_pembayaran' => $riwayatPembayaran,
+            'aging' => $aging,
+            'total_piutang' => $totalPiutang,
+            'lastPembayaran' => $lastPembayaran,
             'current_page' => $currentPageNum,
             'total_pages' => $total_pages
         ];
@@ -139,13 +107,12 @@ class HutangController extends Controller {
         $this->view('owner/hutang', $data);
     }
 
-    // Mencatat pembayaran cicilan hutang
+    // Mencatat pembayaran cicilan hutang (Staf/Kasir/Owner)
     public function bayarCicilan(): void {
-        $this->checkOwner();
-
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $id_hutang = filter_input(INPUT_POST, 'id_hutang', FILTER_VALIDATE_INT);
             $nominal_bayar = filter_input(INPUT_POST, 'nominal_bayar', FILTER_VALIDATE_INT);
+            $created_by = $_SESSION['user_id'];
 
             if (!$id_hutang || $nominal_bayar <= 0) {
                 $_SESSION['error'] = "Nominal pembayaran cicilan harus valid!";
@@ -153,15 +120,90 @@ class HutangController extends Controller {
                 exit();
             }
 
-            $bayar = $this->hutangModel->bayarCicilan($id_hutang, $nominal_bayar);
+            $id_pembayaran = $this->hutangModel->bayarCicilan($id_hutang, $nominal_bayar, $created_by);
 
-            if ($bayar) {
+            if ($id_pembayaran) {
                 $_SESSION['success'] = "Pembayaran cicilan berhasil disimpan.";
+                $_SESSION['last_pembayaran_id'] = $id_pembayaran;
             } else {
                 $_SESSION['error'] = "Gagal mencatat pembayaran cicilan.";
             }
 
-            header('Location: index.php?page=hutang#daftar-piutang');
+            header('Location: index.php?page=hutang');
+            exit();
+        }
+    }
+
+    // Melakukan penyesuaian/pemotongan sisa hutang (Adjustment - Owner & Karyawan)
+    public function adjustment(): void {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $id_hutang = filter_input(INPUT_POST, 'id_hutang', FILTER_VALIDATE_INT);
+            $nominal_adjustment = filter_input(INPUT_POST, 'nominal_adjustment', FILTER_VALIDATE_INT);
+            $created_by = $_SESSION['user_id'];
+
+            if (!$id_hutang || $nominal_adjustment <= 0) {
+                $_SESSION['error'] = "Nominal adjustment harus valid!";
+                header('Location: index.php?page=hutang');
+                exit();
+            }
+
+            $success = $this->hutangModel->adjustmentHutang($id_hutang, $nominal_adjustment, $created_by);
+            if ($success) {
+                $_SESSION['success'] = "Penyesuaian (Adjustment) sisa hutang berhasil disimpan.";
+            } else {
+                $_SESSION['error'] = "Gagal menyimpan penyesuaian sisa hutang.";
+            }
+
+            header('Location: index.php?page=hutang');
+            exit();
+        }
+    }
+
+    // Melakukan Write-Off / Penghapusan Piutang Macet (Owner & Karyawan)
+    public function writeOff(): void {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $id_hutang = filter_input(INPUT_POST, 'id_hutang', FILTER_VALIDATE_INT);
+            $created_by = $_SESSION['user_id'];
+
+            if (!$id_hutang) {
+                $_SESSION['error'] = "ID Hutang tidak valid!";
+                header('Location: index.php?page=hutang');
+                exit();
+            }
+
+            $success = $this->hutangModel->writeOffHutang($id_hutang, $created_by);
+            if ($success) {
+                $_SESSION['success'] = "Piutang macet berhasil dihapuskan (Write-Off) dari pembukuan.";
+            } else {
+                $_SESSION['error'] = "Gagal melakukan write-off piutang macet.";
+            }
+
+            header('Location: index.php?page=hutang');
+            exit();
+        }
+    }
+
+    // Mengupdate Credit Limit Pelanggan (Owner Only)
+    public function updateCreditLimit(): void {
+        $this->checkOwner();
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $id_pelanggan = filter_input(INPUT_POST, 'id_pelanggan', FILTER_VALIDATE_INT);
+            $credit_limit = filter_input(INPUT_POST, 'credit_limit', FILTER_VALIDATE_INT);
+
+            if (!$id_pelanggan || $credit_limit < 0) {
+                $_SESSION['error'] = "Credit limit tidak boleh kurang dari 0 dan ID Pelanggan harus valid!";
+                header('Location: index.php?page=hutang');
+                exit();
+            }
+
+            $success = $this->pelangganModel->updateCreditLimit($id_pelanggan, $credit_limit);
+            if ($success) {
+                $_SESSION['success'] = "Batas limit kredit (Credit Limit) pelanggan berhasil diperbarui.";
+            } else {
+                $_SESSION['error'] = "Gagal memperbarui credit limit pelanggan.";
+            }
+
+            header('Location: index.php?page=hutang');
             exit();
         }
     }
@@ -194,7 +236,7 @@ class HutangController extends Controller {
             }
 
             // Jika statusnya 'Selesai', pulangkan/kembalikan stok ayam fillet yang terpotong
-            if ($transaksi->status_pengiriman == 'Selesai') {
+            if ($transaksi->status_pengiriman == STATUS_PENGIRIMAN_SELESAI) {
                 $details = $this->transaksiModel->getDetails($id_transaksi);
                 foreach ($details as $item) {
                     $this->produkModel->tambahStok($item->id_produk, $item->jumlah_berat_kg);
@@ -216,6 +258,32 @@ class HutangController extends Controller {
             }
 
             header('Location: index.php?page=dashboard&tanggal=' . $transaksi->tanggal . '#daftar-transaksi');
+            exit();
+        }
+    }
+
+    // Membatalkan pembayaran cicilan/adjustment/write-off dan memulihkan saldo piutang
+    public function batalBayar(): void {
+        $this->checkOwner();
+
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $id_pembayaran = filter_input(INPUT_POST, 'id_pembayaran', FILTER_VALIDATE_INT);
+
+            if (!$id_pembayaran) {
+                $_SESSION['error'] = "ID Pembayaran tidak valid!";
+                header('Location: index.php?page=hutang');
+                exit();
+            }
+
+            $success = $this->hutangModel->batalPembayaran($id_pembayaran);
+
+            if ($success) {
+                $_SESSION['success'] = "Pembayaran (BILL-PAY-{$id_pembayaran}) berhasil dibatalkan dan saldo piutang pelanggan dipulihkan.";
+            } else {
+                $_SESSION['error'] = "Gagal membatalkan pembayaran.";
+            }
+
+            header('Location: index.php?page=hutang');
             exit();
         }
     }

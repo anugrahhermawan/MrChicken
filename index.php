@@ -1,8 +1,10 @@
 <?php
 // index.php
+date_default_timezone_set('Asia/Jakarta');
 session_start();
 
 require_once 'config/database.php';
+require_once 'config/constants.php';
 
 $database = new Database();
 $db = $database->getConnection();
@@ -31,6 +33,30 @@ if (isset($_SESSION['user_id'])) {
         exit();
     }
     $_SESSION['last_activity'] = time(); // update activity
+}
+
+// Middleware RBAC (Role-Based Access Control)
+$ownerOnlyPages = [
+    'dashboard',
+    'users',
+    'users-simpan',
+    'users-edit',
+    'users-toggle',
+    'users-hapus',
+    'produk-simpan',
+    'produk-edit',
+    'produk-restock',
+    'produk-hapus',
+    'transaksi-koreksi',
+    'pelanggan-limit-update'
+];
+
+if (in_array($page, $ownerOnlyPages)) {
+    if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'Owner') {
+        http_response_code(403);
+        require_once 'views/errors/403.php';
+        exit();
+    }
 }
 
 // Routing aplikasi
@@ -71,6 +97,12 @@ switch ($page) {
         $controller->tambahPelanggan();
         break;
 
+    case 'api-dashboard-chart':
+        require_once 'controllers/DashboardController.php';
+        $controller = new DashboardController($db);
+        $controller->apiDashboardChart();
+        break;
+
     case 'logistik':
         require_once 'controllers/StokController.php';
         $controller = new StokController($db);
@@ -84,8 +116,8 @@ switch ($page) {
         break;
 
     case 'dashboard':
-        require_once 'controllers/HutangController.php';
-        $controller = new HutangController($db);
+        require_once 'controllers/DashboardController.php';
+        $controller = new DashboardController($db);
         $controller->dashboard();
         break;
 
@@ -99,6 +131,30 @@ switch ($page) {
         require_once 'controllers/HutangController.php';
         $controller = new HutangController($db);
         $controller->bayarCicilan();
+        break;
+
+    case 'hutang-adjustment':
+        require_once 'controllers/HutangController.php';
+        $controller = new HutangController($db);
+        $controller->adjustment();
+        break;
+
+    case 'hutang-writeoff':
+        require_once 'controllers/HutangController.php';
+        $controller = new HutangController($db);
+        $controller->writeOff();
+        break;
+
+    case 'hutang-bayar-batal':
+        require_once 'controllers/HutangController.php';
+        $controller = new HutangController($db);
+        $controller->batalBayar();
+        break;
+
+    case 'pelanggan-limit-update':
+        require_once 'controllers/HutangController.php';
+        $controller = new HutangController($db);
+        $controller->updateCreditLimit();
         break;
 
     case 'transaksi-koreksi':
@@ -168,6 +224,7 @@ switch ($page) {
         break;
 
     default:
-        echo "Halaman tidak ditemukan!";
+        http_response_code(404);
+        require_once 'views/errors/404.php';
         break;
 }

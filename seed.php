@@ -20,6 +20,55 @@ try {
         // Kolom mungkin sudah ada, abaikan error
     }
 
+    // Alter table pelanggan untuk credit_limit
+    try {
+        $db->exec("ALTER TABLE pelanggan ADD COLUMN credit_limit BIGINT DEFAULT 0 AFTER saldo_hutang");
+        echo "- Kolom 'credit_limit' berhasil ditambahkan ke tabel 'pelanggan'.\n";
+    } catch (PDOException $e) {
+        // Abaikan
+    }
+
+    // Alter table transaksi untuk due_date
+    try {
+        $db->exec("ALTER TABLE transaksi ADD COLUMN due_date DATE DEFAULT NULL AFTER tanggal");
+        echo "- Kolom 'due_date' berhasil ditambahkan ke tabel 'transaksi'.\n";
+    } catch (PDOException $e) {
+        // Abaikan
+    }
+
+    // Alter table hutang untuk due_date & status
+    try {
+        $db->exec("ALTER TABLE hutang ADD COLUMN due_date DATE DEFAULT NULL AFTER tanggal_hutang");
+        echo "- Kolom 'due_date' berhasil ditambahkan ke tabel 'hutang'.\n";
+    } catch (PDOException $e) {
+        // Abaikan
+    }
+
+    try {
+        $db->exec("ALTER TABLE hutang ADD COLUMN status ENUM('Aktif', 'Lunas', 'Write-Off') DEFAULT 'Aktif' AFTER sisa_hutang");
+        echo "- Kolom 'status' berhasil ditambahkan ke tabel 'hutang'.\n";
+    } catch (PDOException $e) {
+        // Abaikan
+    }
+
+    // Buat tabel pembayaran_hutang jika belum ada
+    try {
+        $db->exec("
+        CREATE TABLE IF NOT EXISTS `pembayaran_hutang` (
+            `id_pembayaran` INT AUTO_INCREMENT PRIMARY KEY,
+            `id_hutang` INT NOT NULL,
+            `nominal_bayar` INT NOT NULL,
+            `tanggal_bayar` DATETIME NOT NULL,
+            `created_by` INT NOT NULL,
+            CONSTRAINT `fk_pembayaran_hutang_hutang` FOREIGN KEY (`id_hutang`) REFERENCES `hutang`(`id_hutang`) ON DELETE CASCADE,
+            CONSTRAINT `fk_pembayaran_hutang_users` FOREIGN KEY (`created_by`) REFERENCES `users`(`id_user`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+        ");
+        echo "- Tabel 'pembayaran_hutang' berhasil dibuat.\n";
+    } catch (PDOException $e) {
+        // Abaikan
+    }
+
     // 1. Seed Users
     $checkUsers = $db->query("SELECT COUNT(*) FROM users")->fetchColumn();
     if ($checkUsers == 0) {

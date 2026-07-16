@@ -60,7 +60,9 @@ CREATE TABLE IF NOT EXISTS `hutang` (
   `id_transaksi` int NOT NULL,
   `jumlah_hutang` int NOT NULL,
   `sisa_hutang` int NOT NULL,
+  `status` enum('Aktif','Lunas','Write-Off') DEFAULT 'Aktif',
   `tanggal_hutang` date NOT NULL,
+  `due_date` date DEFAULT NULL,
   PRIMARY KEY (`id_hutang`),
   KEY `id_pelanggan` (`id_pelanggan`),
   KEY `id_transaksi` (`id_transaksi`),
@@ -83,8 +85,20 @@ CREATE TABLE IF NOT EXISTS `pelanggan` (
   `no_hp` varchar(20) NOT NULL,
   `alamat` text NOT NULL,
   `saldo_hutang` int DEFAULT '0',
+  `credit_limit` bigint DEFAULT '0',
   PRIMARY KEY (`id_pelanggan`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Dumping structure for table mrchicken.pembayaran_hutang
+CREATE TABLE IF NOT EXISTS `pembayaran_hutang` (
+  `id_pembayaran` INT AUTO_INCREMENT PRIMARY KEY,
+  `id_hutang` INT NOT NULL,
+  `nominal_bayar` INT NOT NULL,
+  `tanggal_bayar` DATETIME NOT NULL,
+  `created_by` INT NOT NULL,
+  CONSTRAINT `fk_pembayaran_hutang_hutang` FOREIGN KEY (`id_hutang`) REFERENCES `hutang`(`id_hutang`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pembayaran_hutang_users` FOREIGN KEY (`created_by`) REFERENCES `users`(`id_user`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Dumping data for table mrchicken.pelanggan: ~4 rows (approximately)
 INSERT INTO `pelanggan` (`id_pelanggan`, `nama_pelanggan`, `no_hp`, `alamat`, `saldo_hutang`) VALUES
@@ -132,6 +146,7 @@ CREATE TABLE IF NOT EXISTS `transaksi` (
   `id_pelanggan` int NOT NULL,
   `id_user` int NOT NULL,
   `tanggal` date NOT NULL,
+  `due_date` date DEFAULT NULL,
   `waktu` time NOT NULL,
   `slot_waktu` enum('Pagi','Sore') NOT NULL,
   `total_berat_akumulatif` decimal(6,2) NOT NULL,

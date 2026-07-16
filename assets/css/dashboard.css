@@ -1,0 +1,66 @@
+/* assets/css/dashboard.css */
+.border-left-slate {
+    border-left-color: #3e506e !important;
+}
+
+.icon-slate {
+    color: #3e506e;
+}
+
+.date-input-max {
+    max-width: 160px;
+}
+
+.metric-icon-container {
+    background-color: #ebf0f7;
+    color: #3e506e !important;
+}
+
+.text-uppercase-bold-compact {
+    font-size: 0.72rem;
+    color: #64748b !important;
+}
+
+.text-dark-semibold {
+    font-size: 1.25rem;
+    color: #2d3748;
+}
+
+.small-text-muted-compact {
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+.text-dark-medium {
+    font-size: 1.02rem;
+    color: #2d3748;
+}
+
+.small-text-center-muted {
+    font-size: 0.75rem;
+}
+
+.canvas-container-omzet {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.canvas-container-produk {
+    position: relative;
+    height: 240px;
+    width: 100%;
+}
+
+.badge-compact-light {
+    font-size: 0.7rem !important;
+}
+
+.badge-compact-btn {
+    font-size: 0.7rem !important;
+}
+
+.badge-text-normal {
+    font-size: 0.7rem !important;
+    font-weight: normal !important;
+}

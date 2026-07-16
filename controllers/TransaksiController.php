@@ -90,6 +90,7 @@ class TransaksiController extends Controller {
             $id_pelanggan = filter_input(INPUT_POST, 'id_pelanggan', FILTER_VALIDATE_INT);
             $slot_waktu = $_POST['slot_waktu'] ?? 'Pagi';
             $metode_pembayaran = $_POST['metode_pembayaran'] ?? 'Lunas';
+            $due_date = !empty($_POST['due_date']) ? $_POST['due_date'] : null;
             
             $produk_ids = $_POST['produk_id'] ?? [];
             $berat_kgs = $_POST['berat_kg'] ?? [];
@@ -130,18 +131,32 @@ class TransaksiController extends Controller {
                 exit();
             }
 
-            // Validasi Slot Muatan: Maksimal 60 Kg per slot per hari
+            // Validasi Credit Limit: Jika (Total Piutang Berjalan + Total Order) > credit_limit pelanggan, gagalkan transaksi
+            if ($metode_pembayaran === 'Hutang') {
+                $pelangganObj = $this->pelangganModel->getById($id_pelanggan);
+                if ($pelangganObj) {
+                    $saldo_hutang = $pelangganObj->saldo_hutang;
+                    $credit_limit = $pelangganObj->credit_limit;
+                    if ($credit_limit > 0 && ($saldo_hutang + $total_harga_order) > $credit_limit) {
+                        $_SESSION['error'] = "Transaksi gagal! Total piutang berjalan + order baru (Rp" . number_format($saldo_hutang + $total_harga_order, 0, ',', '.') . ") melebihi batas limit kredit pelanggan (Rp" . number_format($credit_limit, 0, ',', '.') . ").";
+                        header('Location: index.php?page=kasir');
+                        exit();
+                    }
+                }
+            }
+
+            // Validasi Slot Muatan: Maksimal MAX_SLOT_KG Kg per slot per hari
             $tanggal = date('Y-m-d');
             $waktu = date('H:i:s');
             $berat_terpakai = $this->transaksiModel->getBeratAkumulatif($tanggal, $slot_waktu);
             $total_berat_rencana = $berat_terpakai + $total_berat_order;
 
-            $status_pengiriman = 'Pending';
+            $status_pengiriman = STATUS_PENGIRIMAN_PENDING;
             $pre_order_flag = false;
 
-            if ($total_berat_rencana > 60.0) {
+            if ($total_berat_rencana > MAX_SLOT_KG) {
                 // Pindahkan ke Pre-Order secara otomatis
-                $status_pengiriman = 'Pre-Order';
+                $status_pengiriman = STATUS_PENGIRIMAN_PREORDER;
                 $pre_order_flag = true;
             }
 
@@ -150,6 +165,7 @@ class TransaksiController extends Controller {
                 'id_pelanggan' => $id_pelanggan,
                 'id_user' => $_SESSION['user_id'],
                 'tanggal' => $tanggal,
+                'due_date' => $due_date,
                 'waktu' => $waktu,
                 'slot_waktu' => $slot_waktu,
                 'total_berat_akumulatif' => $total_berat_order,
@@ -169,7 +185,7 @@ class TransaksiController extends Controller {
 
                 // Catat Piutang jika metode pembayaran adalah 'Hutang'
                 if ($metode_pembayaran == 'Hutang') {
-                    $this->hutangModel->tambahHutang($id_pelanggan, $id_transaksi, $total_harga_order);
+                    $this->hutangModel->tambahHutang($id_pelanggan, $id_transaksi, $total_harga_order, $due_date);
                 }
 
                 // Set flash message sukses

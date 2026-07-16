@@ -1,138 +1,115 @@
 <?php
 /** @var array $hutang_aktif */
 /** @var array $pelanggan_hutang */
+/** @var array $all_pelanggan */
+/** @var array $riwayat_pembayaran */
+/** @var array $aging */
+/** @var int $total_piutang */
+/** @var object|null $lastPembayaran */
 /** @var int $current_page */
 /** @var int $total_pages */
 
 $current_page = $current_page ?? 1;
 $total_pages = $total_pages ?? 1;
+$userRole = $_SESSION['role'] ?? 'Karyawan';
 
 require_once 'views/templates/header.php';
 ?>
 
-<div class="row">
-    <!-- Kolom Kiri: Ringkasan Saldo Hutang Pelanggan -->
-    <div class="col-lg-4 mb-4">
-        <div class="card premium-card p-4">
-            <div class="card-body">
-                <h5 class="card-title font-weight-bold mb-4"><i class="fa-solid fa-users text-orange me-2"></i>Rekap Saldo Piutang</h5>
-                
-                <div class="list-group list-group-flush">
-                    <?php if (empty($pelanggan_hutang)): ?>
-                        <div class="text-center py-4 text-muted">
-                            <i class="fa-solid fa-face-smile fa-2x mb-2 text-light"></i>
-                            <p class="small m-0">Tidak ada piutang aktif. Semua pelanggan lunas!</p>
-                        </div>
-                    <?php else: 
-                        foreach ($pelanggan_hutang as $ph): 
-                        ?>
-                            <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
-                                <div>
-                                    <h6 class="font-weight-bold m-0"><?= htmlspecialchars($ph->nama_pelanggan) ?></h6>
-                                    <small class="text-muted"><i class="fa-solid fa-phone me-1"></i><?= htmlspecialchars($ph->no_hp) ?></small>
-                                </div>
-                                <span class="badge bg-danger p-2 font-weight-bold fs-6">
-                                    Rp <?= number_format($ph->saldo_hutang, 0, ',', '.') ?>
-                                </span>
-                            </div>
-                        <?php endforeach; 
-                    endif; ?>
+<div class="container-fluid py-2">
+    <!-- Success Alert for Cicilan Payment Receipt -->
+    <?php if ($lastPembayaran): ?>
+        <div class="alert alert-success premium-card border-success p-4 mb-4 receipt-banner">
+            <div class="row">
+                <div class="col-md-6 border-end pe-4">
+                    <h5 class="font-weight-bold text-success mb-3"><i class="fa-solid fa-circle-check me-2"></i>Pembayaran Cicilan Berhasil</h5>
+                    <div id="strukPembayaran" class="bg-white p-4 border rounded shadow-sm receipt-box">
+                        <div class="text-center fw-bold mb-2 receipt-header">MR. CHICKEN</div>
+                        <div class="text-center text-muted small mb-3">POS & Distribusi Ayam Fillet</div>
+                        <div>-----------------------------------------</div>
+                        <div class="d-flex justify-content-between"><span>No. Resi:</span><strong>BILL-PAY-<?= $lastPembayaran->id_pembayaran ?></strong></div>
+                        <div class="d-flex justify-content-between"><span>Tanggal:</span><span><?= date('d M Y H:i', strtotime($lastPembayaran->tanggal_bayar)) ?></span></div>
+                        <div class="d-flex justify-content-between"><span>Pelanggan:</span><span><?= htmlspecialchars($lastPembayaran->nama_pelanggan) ?></span></div>
+                        <div>-----------------------------------------</div>
+                        <div class="d-flex justify-content-between"><span>Nota Asal:</span><span>Nota #<?= $lastPembayaran->id_transaksi ?? $lastPembayaran->id_hutang ?? '' ?></span></div>
+                        <div class="d-flex justify-content-between"><span>Tipe Aksi:</span><span class="badge bg-light text-dark border"><?= $lastPembayaran->tipe ?></span></div>
+                        <div class="d-flex justify-content-between"><span>Bayar Cicilan:</span><strong class="text-success">Rp <?= number_format($lastPembayaran->nominal_bayar, 0, ',', '.') ?></strong></div>
+                        <div class="d-flex justify-content-between"><span>Sisa Piutang:</span><strong class="text-danger">Rp <?= number_format($lastPembayaran->sisa_hutang, 0, ',', '.') ?></strong></div>
+                        <div>-----------------------------------------</div>
+                        <div class="text-center mt-3 text-muted">*** BUKTI PEMBAYARAN SAH ***</div>
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex flex-column justify-content-center gap-3">
+                    <?php
+                    $waPayText = "*MR. CHICKEN - BUKTI PEMBAYARAN CICILAN*\n";
+                    $waPayText .= "-----------------------------------------\n";
+                    $waPayText .= "No. Resi : BILL-PAY-" . $lastPembayaran->id_pembayaran . "\n";
+                    $waPayText .= "Tanggal  : " . date('d M Y H:i', strtotime($lastPembayaran->tanggal_bayar)) . "\n";
+                    $waPayText .= "Pelanggan: " . $lastPembayaran->nama_pelanggan . "\n";
+                    $waPayText .= "-----------------------------------------\n";
+                    $waPayText .= "Nota Asal: Nota #" . ($lastPembayaran->id_transaksi ?? $lastPembayaran->id_hutang ?? '') . "\n";
+                    $waPayText .= "Bayar    : Rp " . number_format($lastPembayaran->nominal_bayar, 0, ',', '.') . "\n";
+                    $waPayText .= "Sisa AR  : Rp " . number_format($lastPembayaran->sisa_hutang, 0, ',', '.') . "\n";
+                    $waPayText .= "-----------------------------------------\n";
+                    $waPayText .= "Diterima oleh: " . $lastPembayaran->nama_pengguna . "\n";
+                    $waPayText .= "Terima kasih atas pembayaran Anda!";
+                    ?>
+                    <div>
+                        <p class="text-muted small mb-2">Anda dapat mencetak bukti cetak kertas fisik atau mengirimkannya langsung ke pelanggan via WhatsApp.</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success flex-grow-1" onclick="copyReceiptText(<?= htmlspecialchars(json_encode($waPayText)) ?>)">
+                            <i class="fa-brands fa-whatsapp me-2"></i>Salin format WA
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="printReceiptDiv()">
+                            <i class="fa-solid fa-print me-2"></i>Cetak Resi
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    <?php endif; ?>
 
-    <!-- Kolom Kanan: Rincian Nota Piutang Aktif -->
-    <div class="col-lg-8" id="daftar-piutang">
-        <?php require_once 'views/templates/notifications.php'; ?>
-        <div class="card premium-card p-4">
-            <div class="card-body">
-                <h5 class="card-title font-weight-bold mb-4"><i class="fa-solid fa-book text-orange me-2"></i>Buku Hutang Aktif (Belum Lunas)</h5>
-                
-                <div class="table-responsive table-responsive-scroll">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>No. Nota</th>
-                                <th>Tanggal</th>
-                                <th>Pelanggan</th>
-                                <th>Jumlah Hutang</th>
-                                <th>Sisa Hutang</th>
-                                <th class="text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (empty($hutang_aktif)): ?>
-                                <tr>
-                                    <td colspan="6" class="text-center py-5 text-muted">
-                                        <i class="fa-solid fa-circle-check fa-3x mb-3 text-light"></i>
-                                        <p>Semua transaksi penjualan telah lunas dibayar.</p>
-                                    </td>
-                                </tr>
-                            <?php else: 
-                                foreach ($hutang_aktif as $h): 
-                                ?>
-                                    <tr>
-                                        <td class="font-monospace font-weight-bold">#<?= $h->id_transaksi ?></td>
-                                        <td><?= date('d M Y', strtotime($h->tanggal_hutang)) ?></td>
-                                        <td>
-                                            <strong><?= htmlspecialchars($h->nama_pelanggan) ?></strong>
-                                        </td>
-                                        <td>Rp <?= number_format($h->jumlah_hutang, 0, ',', '.') ?></td>
-                                        <td class="font-weight-bold text-danger">Rp <?= number_format($h->sisa_hutang, 0, ',', '.') ?></td>
-                                        <td class="text-center">
-                                            <!-- Button Trigger Modal Cicilan -->
-                                            <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalCicilan<?= $h->id_hutang ?>">
-                                                <i class="fa-solid fa-cash-register me-1"></i> Bayar Cicilan
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; 
-                            endif; ?>
-                        </tbody>
-                    </table>
-                </div>
+    <!-- Owner Specific Metriks & Aging AR widgets -->
+    <?php include 'views/owner/partials/_tab_aging_ar.php'; ?>
 
-                <!-- Pagination Controls -->
-                <?php if ($total_pages > 1): ?>
-                    <nav aria-label="Page navigation" class="mt-4">
-                        <ul class="pagination justify-content-center">
-                            <!-- Tombol Prev -->
-                            <li class="page-item <?= $current_page <= 1 ? 'disabled' : '' ?>">
-                                <a class="page-link text-orange-link" href="index.php?page=hutang&p=<?= $current_page - 1 ?>" aria-label="Previous">
-                                    <i class="fa-solid fa-angle-left"></i>
-                                </a>
-                            </li>
-                            
-                            <!-- Angka Halaman -->
-                            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                                <li class="page-item <?= $i == $current_page ? 'active active-orange' : '' ?>">
-                                    <a class="page-link" href="index.php?page=hutang&p=<?= $i ?>"><?= $i ?></a>
-                                </li>
-                            <?php endfor; ?>
-                            
-                            <!-- Tombol Next -->
-                            <li class="page-item <?= $current_page >= $total_pages ? 'disabled' : '' ?>">
-                                <a class="page-link text-orange-link" href="index.php?page=hutang&p=<?= $current_page + 1 ?>" aria-label="Next">
-                                    <i class="fa-solid fa-angle-right"></i>
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
-                <?php endif; ?>
-            </div>
-        </div>
+    <!-- Navigation Pills / Tabs for Owner -->
+    <?php if ($userRole === 'Owner'): ?>
+        <ul class="nav nav-tabs mb-4" id="arModuleTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active font-weight-bold text-dark" id="ar-piutang-tab" data-bs-toggle="tab" data-bs-target="#tab-piutang" type="button" role="tab" aria-controls="tab-piutang" aria-selected="true">
+                    <i class="fa-solid fa-book-bookmark me-2 text-primary"></i>Buku Piutang Aktif
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link font-weight-bold text-dark" id="ar-limit-tab" data-bs-toggle="tab" data-bs-target="#tab-limit" type="button" role="tab" aria-controls="tab-limit" aria-selected="false">
+                    <i class="fa-solid fa-sliders me-2 text-warning"></i>Pengaturan Credit Limit
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link font-weight-bold text-dark" id="ar-history-tab" data-bs-toggle="tab" data-bs-target="#tab-history" type="button" role="tab" aria-controls="tab-history" aria-selected="false">
+                    <i class="fa-solid fa-clock-rotate-left me-2 text-success"></i>Riwayat & Audit Trail Pembayaran
+                </button>
+            </li>
+        </ul>
+    <?php endif; ?>
+
+    <div class="tab-content" id="arModuleTabsContent">
+        <?php include 'views/owner/partials/_tab_piutang_aktif.php'; ?>
+        <?php include 'views/owner/partials/_tab_credit_limit.php'; ?>
+        <?php include 'views/owner/partials/_tab_audit_trail.php'; ?>
     </div>
 </div>
 
-<!-- Modal Cicilan (Dipindahkan ke luar tabel untuk mencegah visual glitch) -->
+<!-- MODALS SECTION -->
+<!-- 1. Modal Cicilan (Owner & Karyawan) -->
 <?php if (!empty($hutang_aktif)): ?>
     <?php foreach ($hutang_aktif as $h): ?>
         <div class="modal fade" id="modalCicilan<?= $h->id_hutang ?>" tabindex="-1" aria-labelledby="modalCicilanLabel<?= $h->id_hutang ?>" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content" style="border-radius: 16px;">
+                <div class="modal-content modal-content-custom">
                     <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title font-weight-bold" id="modalCicilanLabel<?= $h->id_hutang ?>"><i class="fa-solid fa-hand-holding-dollar text-success me-2"></i>Bayar Cicilan Nota #<?= $h->id_transaksi ?></h5>
+                        <h5 class="modal-title font-weight-bold text-success" id="modalCicilanLabel<?= $h->id_hutang ?>"><i class="fa-solid fa-cash-register me-2"></i>Bayar Cicilan Piutang</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <form action="index.php?page=hutang-bayar" method="POST">
@@ -143,24 +120,23 @@ require_once 'views/templates/header.php';
                                 <input type="text" class="form-control bg-light" readonly value="<?= htmlspecialchars($h->nama_pelanggan) ?>">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label small text-muted">Sisa Hutang</label>
+                                <label class="form-label small text-muted">Sisa Piutang Berjalan</label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
                                     <input type="text" class="form-control bg-light font-weight-bold text-danger" readonly value="<?= number_format($h->sisa_hutang, 0, ',', '.') ?>">
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label for="nominal_bayar<?= $h->id_hutang ?>" class="form-label small">Nominal Cicilan / Pelunasan</label>
+                                <label for="nominal_bayar<?= $h->id_hutang ?>" class="form-label small">Nominal Pembayaran Tunai</label>
                                 <div class="input-group">
                                     <span class="input-group-text">Rp</span>
-                                    <input type="number" class="form-control" id="nominal_bayar<?= $h->id_hutang ?>" name="nominal_bayar" min="1" max="<?= $h->sisa_hutang ?>" required placeholder="Masukkan nominal bayar...">
+                                    <input type="number" class="form-control font-weight-bold" id="nominal_bayar<?= $h->id_hutang ?>" name="nominal_bayar" min="1" max="<?= $h->sisa_hutang ?>" required placeholder="Masukkan jumlah pembayaran...">
                                 </div>
-                                <small class="form-text text-muted">Maksimal pembayaran cicilan adalah nominal sisa hutang.</small>
                             </div>
                         </div>
                         <div class="modal-footer border-0 pt-0">
                             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-success">Simpan Pembayaran</button>
+                            <button type="submit" class="btn btn-success px-4">Simpan Pembayaran</button>
                         </div>
                     </form>
                 </div>
@@ -168,6 +144,127 @@ require_once 'views/templates/header.php';
         </div>
     <?php endforeach; ?>
 <?php endif; ?>
+
+<!-- 2. Modal Adjustment (Owner Only) -->
+<?php if (!empty($hutang_aktif)): ?>
+    <?php foreach ($hutang_aktif as $h): ?>
+        <div class="modal fade" id="modalAdjustment<?= $h->id_hutang ?>" tabindex="-1" aria-labelledby="modalAdjustmentLabel<?= $h->id_hutang ?>" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content modal-content-custom">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-warning" id="modalAdjustmentLabel<?= $h->id_hutang ?>"><i class="fa-solid fa-scissors me-2"></i>Beri Potongan Harga</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="index.php?page=hutang-adjustment" method="POST">
+                        <input type="hidden" name="id_hutang" value="<?= $h->id_hutang ?>">
+                        <div class="modal-body py-3">
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Pelanggan</label>
+                                <input type="text" class="form-control bg-light" readonly value="<?= htmlspecialchars($h->nama_pelanggan) ?>">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Sisa Piutang Berjalan</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="text" class="form-control bg-light font-weight-bold text-danger" readonly value="<?= number_format($h->sisa_hutang, 0, ',', '.') ?>">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="nominal_adjustment<?= $h->id_hutang ?>" class="form-label small">Nominal Potongan Harga (Diskon Pelunasan)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" class="form-control font-weight-bold text-warning" id="nominal_adjustment<?= $h->id_hutang ?>" name="nominal_adjustment" min="1" max="<?= $h->sisa_hutang ?>" required placeholder="Masukkan jumlah potongan harga...">
+                                </div>
+                                <small class="form-text text-muted">Nilai potongan ini akan mengurangi sisa piutang dan dicatat sebagai beban potongan harga.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-warning text-dark px-4">Simpan Potongan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    <?php endforeach; ?>
+<?php endif; ?>
+
+<!-- 3. Modal Write-Off (Owner Only) -->
+<?php if (!empty($hutang_aktif)): ?>
+    <?php foreach ($hutang_aktif as $h): ?>
+        <div class="modal fade" id="modalWriteOff<?= $h->id_hutang ?>" tabindex="-1" aria-labelledby="modalWriteOffLabel<?= $h->id_hutang ?>" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content modal-content-custom">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold text-danger" id="modalWriteOffLabel<?= $h->id_hutang ?>"><i class="fa-solid fa-circle-exclamation me-2"></i>Tandai Pembayaran Bermasalah</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="index.php?page=hutang-writeoff" method="POST">
+                        <input type="hidden" name="id_hutang" value="<?= $h->id_hutang ?>">
+                        <div class="modal-body py-3 text-center">
+                            <div class="text-danger mb-3 large-error-icon">
+                                ⚠️
+                            </div>
+                            <h5 class="fw-bold mb-3">Konfirmasi Pembayaran Bermasalah</h5>
+                            <p class="text-muted small">Apakah Anda yakin ingin menandai sisa piutang sebesar <strong class="text-danger">Rp <?= number_format($h->sisa_hutang, 0, ',', '.') ?></strong> untuk pelanggan <strong><?= htmlspecialchars($h->nama_pelanggan) ?></strong> pada transaksi <strong>#<?= $h->id_transaksi ?></strong> sebagai pembayaran bermasalah?</p>
+                            <div class="alert alert-danger small text-start">
+                                <strong>PENTING:</strong> Tindakan ini akan mengosongkan sisa piutang dan menandai transaksi ini sebagai <em>Pembayaran Bermasalah</em> (rugi/tidak tertagih). Tindakan ini <strong>tidak dapat dibatalkan!</strong>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0 justify-content-center">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-danger px-4">Ya, Tandai Bermasalah</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    <?php endforeach; ?>
+<?php endif; ?>
+
+<!-- 4. Modal Edit Credit Limit (Owner Only) -->
+<?php if ($userRole === 'Owner' && !empty($all_pelanggan)): ?>
+    <?php foreach ($all_pelanggan as $plg): ?>
+        <div class="modal fade" id="modalLimitPelanggan<?= $plg->id_pelanggan ?>" tabindex="-1" aria-labelledby="modalLimitPelangganLabel<?= $plg->id_pelanggan ?>" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content modal-content-custom">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title font-weight-bold" id="modalLimitPelangganLabel<?= $plg->id_pelanggan ?>"><i class="fa-solid fa-sliders text-warning me-2"></i>Ubah Limit Kredit Pelanggan</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="index.php?page=pelanggan-limit-update" method="POST">
+                        <input type="hidden" name="id_pelanggan" value="<?= $plg->id_pelanggan ?>">
+                        <div class="modal-body py-3">
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Pelanggan</label>
+                                <input type="text" class="form-control bg-light" readonly value="<?= htmlspecialchars($plg->nama_pelanggan) ?>">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Saldo Piutang Berjalan</label>
+                                <input type="text" class="form-control bg-light font-weight-bold text-danger" readonly value="Rp <?= number_format($plg->saldo_hutang, 0, ',', '.') ?>">
+                            </div>
+                            <div class="mb-3">
+                                <label for="credit_limit<?= $plg->id_pelanggan ?>" class="form-label small">Batas Limit Kredit Baru</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" class="form-control font-weight-bold" id="credit_limit<?= $plg->id_pelanggan ?>" name="credit_limit" min="0" value="<?= $plg->credit_limit ?>" required>
+                                </div>
+                                <small class="form-text text-muted">Set limit ke 0 untuk menonaktifkan batasan kredit (unlimited).</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    <?php endforeach; ?>
+<?php endif; ?>
+
+<!-- JS utilities -->
+<script src="assets/js/hutang.js"></script>
 
 <?php
 require_once 'views/templates/footer.php';

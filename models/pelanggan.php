@@ -28,7 +28,7 @@ class Pelanggan {
 
     // Menyimpan pelanggan baru (dari modal di POS)
     public function create(string $nama, string $no_hp, string $alamat): int|false {
-        $query = "INSERT INTO " . $this->table_name . " (nama_pelanggan, no_hp, alamat, saldo_hutang) VALUES (:nama, :no_hp, :alamat, 0)";
+        $query = "INSERT INTO " . $this->table_name . " (nama_pelanggan, no_hp, alamat, saldo_hutang, credit_limit) VALUES (:nama, :no_hp, :alamat, 0, 0)";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':nama', $nama);
         $stmt->bindParam(':no_hp', $no_hp);
@@ -38,5 +38,14 @@ class Pelanggan {
             return (int)$this->conn->lastInsertId();
         }
         return false;
+    }
+
+    // Update credit limit pelanggan (Khusus Owner)
+    public function updateCreditLimit(int $id_pelanggan, int $credit_limit): bool {
+        $query = "UPDATE " . $this->table_name . " SET credit_limit = :credit_limit WHERE id_pelanggan = :id_pelanggan";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':credit_limit', $credit_limit, PDO::PARAM_INT);
+        $stmt->bindParam(':id_pelanggan', $id_pelanggan, PDO::PARAM_INT);
+        return $stmt->execute();
     }
 }

@@ -25,12 +25,12 @@ require_once 'views/templates/header.php';
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th width="80" class="text-center">No</th>
+                        <th width="80" class="text-center d-none d-sm-table-cell">No</th>
                         <th>Nama Lengkap</th>
-                        <th>Username</th>
-                        <th>Peran (Role)</th>
+                        <th class="d-none d-md-table-cell">Username</th>
+                        <th class="d-none d-md-table-cell">Peran (Role)</th>
                         <th>Status</th>
-                        <th class="text-center" width="280">Aksi</th>
+                        <th class="text-center" width="120">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -39,10 +39,16 @@ require_once 'views/templates/header.php';
                     foreach ($users as $u): 
                     ?>
                         <tr>
-                            <td class="text-center font-weight-bold"><?= $no++ ?></td>
-                            <td><strong><?= htmlspecialchars($u->nama_pengguna) ?></strong></td>
-                            <td class="font-monospace"><?= htmlspecialchars($u->username) ?></td>
+                            <td class="text-center font-weight-bold d-none d-sm-table-cell"><?= $no++ ?></td>
                             <td>
+                                <strong><?= htmlspecialchars($u->nama_pengguna) ?></strong>
+                                <div class="d-md-none text-muted small mt-1">
+                                    <span class="font-monospace">@<?= htmlspecialchars($u->username) ?></span> &middot; 
+                                    <span class="badge <?= $u->role === 'Owner' ? 'bg-danger' : 'bg-primary' ?> p-1 badge-compact"><?= htmlspecialchars($u->role) ?></span>
+                                </div>
+                            </td>
+                            <td class="font-monospace d-none d-md-table-cell"><?= htmlspecialchars($u->username) ?></td>
+                            <td class="d-none d-md-table-cell">
                                 <span class="badge <?= $u->role === 'Owner' ? 'bg-danger' : 'bg-primary' ?>">
                                     <?= htmlspecialchars($u->role) ?>
                                 </span>
@@ -55,26 +61,34 @@ require_once 'views/templates/header.php';
                                 <?php endif; ?>
                             </td>
                             <td class="text-center">
-                                <!-- Tombol Edit -->
-                                <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalEditUser<?= $u->id_user ?>">
-                                    <i class="fa-solid fa-user-pen me-1"></i> Edit
-                                </button>
-
-                                <!-- Tombol Aktif/Nonaktifkan -->
-                                <a href="index.php?page=users-toggle&id=<?= $u->id_user ?>" 
-                                   class="btn btn-sm <?= $u->status_aktif == 1 ? 'btn-outline-warning' : 'btn-outline-success' ?> me-1"
-                                   onclick="return confirm('Apakah Anda yakin ingin mengubah status keaktifan pengguna ini?');">
-                                    <i class="fa-solid <?= $u->status_aktif == 1 ? 'fa-ban' : 'fa-check' ?> me-1"></i>
-                                    <?= $u->status_aktif == 1 ? 'Nonaktifkan' : 'Aktifkan' ?>
-                                </a>
-
-                                <!-- Tombol Hapus -->
-                                <form action="index.php?page=users-hapus" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pengguna ini secara permanen dari sistem?');">
-                                    <input type="hidden" name="id_user" value="<?= $u->id_user ?>">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="fa-solid fa-trash-can"></i>
+                                <div class="dropdown d-inline-block">
+                                    <button class="btn btn-sm btn-light border dropdown-toggle dropdown-btn-compact" type="button" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false">
+                                        <i class="fa-solid fa-ellipsis-vertical text-muted"></i>
                                     </button>
-                                </form>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 dropdown-menu-custom">
+                                        <li>
+                                            <a class="dropdown-item py-2 text-primary" href="#" data-bs-toggle="modal" data-bs-target="#modalEditUser<?= $u->id_user ?>">
+                                                <i class="fa-solid fa-user-pen me-2"></i> Edit Data
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2 <?= $u->status_aktif == 1 ? 'text-warning' : 'text-success' ?>" href="index.php?page=users-toggle&id=<?= $u->id_user ?>" 
+                                               onclick="return confirm('Apakah Anda yakin ingin mengubah status keaktifan pengguna ini?');">
+                                                <i class="fa-solid <?= $u->status_aktif == 1 ? 'fa-ban' : 'fa-check' ?> me-2"></i>
+                                                <?= $u->status_aktif == 1 ? 'Nonaktifkan' : 'Aktifkan' ?>
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider my-1"></li>
+                                        <li>
+                                            <form action="index.php?page=users-hapus" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pengguna ini secara permanen dari sistem?');">
+                                                <input type="hidden" name="id_user" value="<?= $u->id_user ?>">
+                                                <button type="submit" class="dropdown-item py-2 text-danger border-0 bg-transparent w-100 text-start">
+                                                    <i class="fa-solid fa-trash-can me-2"></i> Hapus
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -87,7 +101,7 @@ require_once 'views/templates/header.php';
 <!-- Modal Tambah User Baru (Dipindahkan ke luar tabel untuk mencegah visual glitch) -->
 <div class="modal fade" id="modalTambahUser" tabindex="-1" aria-labelledby="modalTambahUserLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px;">
+        <div class="modal-content modal-content-custom">
             <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title font-weight-bold" id="modalTambahUserLabel"><i class="fa-solid fa-user-plus text-primary me-2"></i>Tambah Pengguna Baru</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -127,7 +141,7 @@ require_once 'views/templates/header.php';
 <?php foreach ($users as $u): ?>
     <div class="modal fade" id="modalEditUser<?= $u->id_user ?>" tabindex="-1" aria-labelledby="modalEditUserLabel<?= $u->id_user ?>" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 16px;">
+            <div class="modal-content modal-content-custom">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title font-weight-bold" id="modalEditUserLabel<?= $u->id_user ?>"><i class="fa-solid fa-user-pen text-primary me-2"></i>Edit Data Pengguna</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
